@@ -10,8 +10,15 @@ namespace DevOpsProject.CommunicationControl.API.DI
         public static IServiceCollection AddRedis(this IServiceCollection serviceCollection, IConfiguration configuration)
         {
             var redisConfiguration = configuration.GetSection("Redis").Get<RedisOptions>();
-            var redis = ConnectionMultiplexer.Connect(redisConfiguration.ConnectionString);
+            var redisEnvironmentConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? redisConfiguration.ConnectionString;
 
+            var options = new ConfigurationOptions
+            {
+                EndPoints = { redisEnvironmentConnectionString ?? redisConfiguration.ConnectionString },
+                Ssl = true
+            };
+            var redis = ConnectionMultiplexer.Connect(options);
+            
             serviceCollection.AddSingleton<IConnectionMultiplexer>(redis);
 
             serviceCollection.Configure<RedisOptions>(
@@ -22,7 +29,6 @@ namespace DevOpsProject.CommunicationControl.API.DI
 
             serviceCollection.AddTransient<IRedisKeyValueService, RedisKeyValueService>();
 
-            // add message bus here - currently using Redis implementation
             serviceCollection.AddTransient<IPublishService, RedisPublishService>();
 
             return serviceCollection;

@@ -2,6 +2,8 @@ src/MapClient/node_modules
 src/MapClient/dist
 src/CommunicationControl/.idea
 src/CommunicationControl/.vs
+**/publish*/**
+**/*.zip
 bin
 obj
 Logs
