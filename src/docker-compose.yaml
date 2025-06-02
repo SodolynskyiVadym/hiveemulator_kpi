@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+  communication_control_api:
+    image: communication_control_api_image
+    container_name: communication_control_api
+    build:
+      context: ./CommunicationControl
+      dockerfile: CommunicationControlAPI.Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_CONNECTION=redis:6379
+
+
+
+
+  hive_mind_api:
+    image: hive_mind_api_image
+    container_name: hive_mind_api
+    build:
+      context: ./CommunicationControl
+      dockerfile: HiveMind.Dockerfile
+    ports:
+      - "5149:5149"
+    environment:
+      - COMMUNICATION_IP=communication_control_api
+      - COMMUNICATION_PORT=8080
+
+
+  map_client:
+    image: map_client_image
+    container_name: map_client
+    build: 
+      context: ./MapClient
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_BASE_URL="http://communication_control_api:8000"
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
