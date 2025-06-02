@@ -5,6 +5,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // Fetch the center coordinates for the initial map load
 export const fetchCenterCoordinates = async (apiUrl) => {
     try {
+        apiUrl = API_BASE_URL || apiUrl;
+                console.log(`${apiUrl}/hive`);
         const response = await axios.get(`${apiUrl}/area`);
         return response.data;
     } catch (error) {
@@ -16,6 +18,8 @@ export const fetchCenterCoordinates = async (apiUrl) => {
 // Fetch all hives and extract their latitude/longitude
 export const fetchHives = async (apiUrl) => {
     try {
+        apiUrl = API_BASE_URL || apiUrl;
+                console.log(`${apiUrl}/hive`);
         const response = await axios.get(`${apiUrl}/hive`);
 
         return response.data.map(hive => ({
@@ -33,6 +37,9 @@ export const fetchHives = async (apiUrl) => {
 // Move all hives to a new location
 export const moveHives = async (apiUrl, lat, lon, ids) => {
     try {
+        apiUrl = API_BASE_URL || apiUrl;
+        console.log(`${apiUrl}/hive`);
+
         await axios.patch(`${apiUrl}/hive`, { 
             Hives: ids, 
             Destination: {

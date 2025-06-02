@@ -24,12 +24,22 @@ namespace DevOpsProject.HiveMind.Logic.Services
             _httpClient = httpClient;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
+
             _communicationConfigurationOptions = communicationConfigurationOptions.Value;
+
+            if (Environment.GetEnvironmentVariable("RequestSchema") == "https")
+            {
+                _communicationConfigurationOptions.IsHttpsConnected = true;
+                _communicationConfigurationOptions.CommunicationControlIP = Environment.GetEnvironmentVariable("COMMUNICATION_IP") ?? "localhost";
+                _communicationConfigurationOptions.HiveIP = Environment.GetEnvironmentVariable("HIVE_IP") ?? "localhost";
+                _communicationConfigurationOptions.RequestSchema = "https";
+            }
+            System.Console.WriteLine(_communicationConfigurationOptions.ToString());
         }
 
         public async Task ConnectHive()
         {
-            var request = new HiveConnectRequest
+            var requestSerialize = new HiveConnectRequest
             {
                 HiveSchema = _communicationConfigurationOptions.RequestSchema,
                 HiveIP = _communicationConfigurationOptions.HiveIP,
@@ -39,16 +49,23 @@ namespace DevOpsProject.HiveMind.Logic.Services
 
             var httpClient = _httpClientFactory.CreateClient("HiveConnectClient");
 
-            var uriBuilder = new UriBuilder
-            {
-                Scheme = _communicationConfigurationOptions.RequestSchema,
-                Host = _communicationConfigurationOptions.CommunicationControlIP,
-                Port = _communicationConfigurationOptions.CommunicationControlPort,
-                Path = $"{_communicationConfigurationOptions.CommunicationControlPath}/connect"
-            };
-            var jsonContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
-            _logger.LogInformation("Attempting to connect Hive. Request: {@request}, URI: {uri}", request, uriBuilder.Uri);
+            // var uriBuilder = new UriBuilder
+            // {
+            //     Scheme = _communicationConfigurationOptions.RequestSchema,
+            //     Host = _communicationConfigurationOptions.CommunicationControlIP,
+            //     Port = _communicationConfigurationOptions.CommunicationControlPort,
+            //     Path = $"{_communicationConfigurationOptions.CommunicationControlPath}/connect"
+            // };
+            
+
+            var uri = new Uri($"{_communicationConfigurationOptions.RequestSchema}://{_communicationConfigurationOptions.CommunicationControlIP}/{$"{_communicationConfigurationOptions.CommunicationControlPath}/connect"}");
+            if(!_communicationConfigurationOptions.IsHttpsConnected) uri = new Uri($"{_communicationConfigurationOptions.RequestSchema}://{_communicationConfigurationOptions.CommunicationControlIP}:{_communicationConfigurationOptions.CommunicationControlPort}/{$"{_communicationConfigurationOptions.CommunicationControlPath}/connect"}");
+
+            var jsonContent = new StringContent(JsonSerializer.Serialize(requestSerialize), Encoding.UTF8, "application/json");
+            System.Console.WriteLine($"Connecting HiveID: {requestSerialize.HiveID}, URI: {uri}, Request content: {jsonContent}");
+
+            _logger.LogInformation("Attempting to connect Hive. Request: {@request}, URI: {uri}", requestSerialize, uri);
 
             var retryPolicy = Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
                 .WaitAndRetryAsync(
@@ -56,10 +73,10 @@ namespace DevOpsProject.HiveMind.Logic.Services
                     retryAttempt => TimeSpan.FromSeconds(2),
                     (result, timeSpan, retryCount, context) =>
                     {
-                        _logger.LogWarning($"Connecting HiveID: {_communicationConfigurationOptions.HiveID}, retry attempt: {retryCount}. \nRequest URL: {uriBuilder.Uri}, request content: {jsonContent}");
+                        _logger.LogWarning($"Connecting HiveID: {_communicationConfigurationOptions.HiveID}, retry attempt: {retryCount}. \nRequest URL: {uri}, request content: {jsonContent}");
                     });
 
-            var response = await retryPolicy.ExecuteAsync(() => httpClient.PostAsync(uriBuilder.Uri, jsonContent));
+            var response = await retryPolicy.ExecuteAsync(() => httpClient.PostAsync(uri, jsonContent));
 
             if (response.IsSuccessStatusCode)
             {
@@ -75,8 +92,8 @@ namespace DevOpsProject.HiveMind.Logic.Services
                 }
                 else
                 {
-                    _logger.LogInformation($"Connecting hive failed for ID: {request.HiveID}");
-                    throw new Exception($"Failed to connect HiveID: {request.HiveID}");
+                    _logger.LogInformation($"Connecting hive failed for ID: {requestSerialize.HiveID}");
+                    throw new Exception($"Failed to connect HiveID: {requestSerialize.HiveID}");
                 }
             }
             else
@@ -112,6 +129,9 @@ namespace DevOpsProject.HiveMind.Logic.Services
 
         private async void SendTelemetry(object state)
         {
+            var telemetryUri = new Uri($"{_communicationConfigurationOptions.RequestSchema}://{_communicationConfigurationOptions.CommunicationControlIP}/{$"{_communicationConfigurationOptions.CommunicationControlPath}/telemetry"}");
+            if(!_communicationConfigurationOptions.IsHttpsConnected) telemetryUri = new Uri($"{_communicationConfigurationOptions.RequestSchema}://{_communicationConfigurationOptions.CommunicationControlIP}:{_communicationConfigurationOptions.CommunicationControlPort}/{$"{_communicationConfigurationOptions.CommunicationControlPath}/telemetry"}");
+
             var currentLocation = HiveInMemoryState.CurrentLocation;
 
             try
@@ -126,9 +146,7 @@ namespace DevOpsProject.HiveMind.Logic.Services
                     State = Shared.Enums.State.Move
                 };
 
-                var connectResult = await _httpClient.SendCommunicationControlTelemetryAsync(_communicationConfigurationOptions.RequestSchema,
-                    _communicationConfigurationOptions.CommunicationControlIP, _communicationConfigurationOptions.CommunicationControlPort,
-                    _communicationConfigurationOptions.CommunicationControlPath, request);
+                var connectResult = await _httpClient.SendCommunicationControlTelemetryAsync(telemetryUri, request);
 
                 _logger.LogInformation($"Telemetry sent for HiveID: {request.HiveID}: {connectResult}");
 

@@ -13,19 +13,19 @@ namespace DevOpsProject.Shared.Clients
             _httpClient = httpClient;
         }
 
-        public async Task<string> SendCommunicationControlConnectAsync(string requestSchema, string ip, int port, string path, HiveConnectRequest payload)
+        public async Task<string> SendCommunicationControlConnectAsync(Uri uri, HiveConnectRequest payload)
         {
-            var uriBuilder = new UriBuilder
-            {
-                Scheme = requestSchema,
-                Host = ip,
-                Port = port,
-                Path = $"{path}/connect"
-            };
+            // var uriBuilder = new UriBuilder
+            // {
+            //     Scheme = requestSchema,
+            //     Host = ip,
+            //     Port = port,
+            //     Path = $"{path}/connect"
+            // };
 
             var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync(uriBuilder.Uri, jsonContent);
+            var response = await _httpClient.PostAsync(uri, jsonContent);
 
             if (response.IsSuccessStatusCode)
             {
@@ -34,19 +34,20 @@ namespace DevOpsProject.Shared.Clients
             return null;
         }
 
-        public async Task<string> SendCommunicationControlTelemetryAsync(string requestSchema, string ip, int port, string path, HiveTelemetryRequest payload)
+        public async Task<string> SendCommunicationControlTelemetryAsync(Uri uri, HiveTelemetryRequest payload)
         {
-            var uriBuilder = new UriBuilder
-            {
-                Scheme = requestSchema,
-                Host = ip,
-                Port = port,
-                Path = $"{path}/telemetry"
-            };
+            // System.Console.WriteLine($"Sending telemetry to {ip}:{port} with schema {requestSchema} and path {path}/telemetry");
+            // var uriBuilder = new UriBuilder
+            // {
+            //     Scheme = requestSchema,
+            //     Host = ip,
+            //     Port = port,
+            //     Path = $"{path}/telemetry"
+            // };
 
             var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync(uriBuilder.Uri, jsonContent);
+            var response = await _httpClient.PostAsync(uri, jsonContent);
 
             if (response.IsSuccessStatusCode)
             {
