@@ -36,17 +36,18 @@ namespace DevOpsProject.Shared.Clients
 
         public async Task<string> SendCommunicationControlTelemetryAsync(string requestSchema, string ip, int port, string path, HiveTelemetryRequest payload)
         {
-            var uriBuilder = new UriBuilder
-            {
-                Scheme = requestSchema,
-                Host = ip,
-                Port = port,
-                Path = $"{path}/telemetry"
-            };
+            var controlUrl = new Uri($"{requestSchema}://{ip}/{path}/telemetry");
+            // var uriBuilder = new UriBuilder
+            // {
+            //     Scheme = requestSchema,
+            //     Host = ip,
+            //     Port = port,
+            //     Path = $"{path}/telemetry"
+            // };
 
             var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync(uriBuilder.Uri, jsonContent);
+            var response = await _httpClient.PostAsync(controlUrl, jsonContent);
 
             if (response.IsSuccessStatusCode)
             {

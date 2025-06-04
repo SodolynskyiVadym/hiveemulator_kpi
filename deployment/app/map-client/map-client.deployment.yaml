@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: map-client
+  namespace: default
+  labels:
+    app: map-client
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: map-client
+  template:
+    metadata:
+      labels:
+        app: map-client
+    spec:
+      containers:
+      - name: map-client
+        image: registry.digitalocean.com/devops-registry-vadym/map-client:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+        volumeMounts:
+          - name : config-volume
+            mountPath: /usr/share/nginx/html/config.json
+            subPath: config.json
+      volumes:
+        - name: config-volume
+          configMap:
+            name: map-client-config
+      imagePullSecrets:
+        - name: digital-ocean

@@ -34,6 +34,7 @@ const MapView = () => {
             const data = await res.json()
 
             apiUrl.current = data.API
+            apiUrl.current = "http://143.244.206.21/control/api/v1/client";
 
             if (initialized.current) return;
             initialized.current = true;

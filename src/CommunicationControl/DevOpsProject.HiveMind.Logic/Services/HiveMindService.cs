@@ -37,6 +37,8 @@ namespace DevOpsProject.HiveMind.Logic.Services
                 HiveID = _communicationConfigurationOptions.HiveID
             };
 
+            // var hiveUrl = new Uri($"{_communicationConfigurationOptions.RequestSchema}://{_communicationConfigurationOptions.HiveIP}/{_communicationConfigurationOptions.CommunicationControlPath}/connect");
+
             var httpClient = _httpClientFactory.CreateClient("HiveConnectClient");
 
             var uriBuilder = new UriBuilder
@@ -46,9 +48,11 @@ namespace DevOpsProject.HiveMind.Logic.Services
                 Port = _communicationConfigurationOptions.CommunicationControlPort,
                 Path = $"{_communicationConfigurationOptions.CommunicationControlPath}/connect"
             };
+
+            var controlUrl = new Uri($"{_communicationConfigurationOptions.RequestSchema}://{_communicationConfigurationOptions.CommunicationControlIP}/{_communicationConfigurationOptions.CommunicationControlPath}/connect");
             var jsonContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
-            _logger.LogInformation("Attempting to connect Hive. Request: {@request}, URI: {uri}", request, uriBuilder.Uri);
+            _logger.LogInformation("Attempting to connect Hive. Request: {@request}, URI: {uri}", request, controlUrl);
 
             var retryPolicy = Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
                 .WaitAndRetryAsync(
@@ -56,10 +60,10 @@ namespace DevOpsProject.HiveMind.Logic.Services
                     retryAttempt => TimeSpan.FromSeconds(2),
                     (result, timeSpan, retryCount, context) =>
                     {
-                        _logger.LogWarning($"Connecting HiveID: {_communicationConfigurationOptions.HiveID}, retry attempt: {retryCount}. \nRequest URL: {uriBuilder.Uri}, request content: {jsonContent}");
+                        _logger.LogWarning($"Connecting HiveID: {_communicationConfigurationOptions.HiveID}, retry attempt: {retryCount}. \nRequest URL: {controlUrl}, request content: {jsonContent}");
                     });
 
-            var response = await retryPolicy.ExecuteAsync(() => httpClient.PostAsync(uriBuilder.Uri, jsonContent));
+            var response = await retryPolicy.ExecuteAsync(() => httpClient.PostAsync(controlUrl, jsonContent));
 
             if (response.IsSuccessStatusCode)
             {
