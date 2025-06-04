@@ -1,46 +1,68 @@
 version: '3'
 
 services:
-  communication_control_api:
-    image: communication_control_api_image
-    container_name: communication_control_api
+  communication_control:
+    image: sodolynckyivadym/control-api:latest
+    container_name: communication_control
     build:
       context: ./CommunicationControl
       dockerfile: CommunicationControlAPI.Dockerfile
+    depends_on:
+      redis:
+        condition: service_started
     ports:
       - "8080:8080"
     environment:
       - REDIS_CONNECTION=redis:6379
+    networks:
+      - devops
 
 
-
-
-  hive_mind_api:
-    image: hive_mind_api_image
-    container_name: hive_mind_api
+  hive_mind:
+    image: sodolynckyivadym/hive-mind:latest
+    container_name: hive_mind
     build:
       context: ./CommunicationControl
       dockerfile: HiveMind.Dockerfile
+    depends_on:
+      communication_control:
+        condition: service_started
     ports:
       - "5149:5149"
     environment:
-      - COMMUNICATION_IP=communication_control_api
+      - COMMUNICATION_IP=communication_control
+      - HIVE_IP=hive_mind
       - COMMUNICATION_PORT=8080
+      - HIVE_PORT=5149
+    networks:
+      - devops
 
 
   map_client:
-    image: map_client_image
+    image: sodolynckyivadym/map-client:latest
     container_name: map_client
     build: 
       context: ./MapClient
       dockerfile: Dockerfile
+    depends_on:
+      - communication_control
+      - hive_mind
     ports:
       - "80:80"
     environment:
-      - VITE_API_BASE_URL="http://communication_control_api:8000"
+      - VITE_API_BASE_URL=http://localhost:8080/api/v1/client
+    networks:
+      - devops
 
   redis:
     image: redis
     container_name: redis
     ports:
       - "6379:6379"
+    networks:
+      - devops
+  
+
+networks:
+  devops:
+    driver: bridge

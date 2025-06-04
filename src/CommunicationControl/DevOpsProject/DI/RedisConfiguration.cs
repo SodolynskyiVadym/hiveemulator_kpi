@@ -11,17 +11,8 @@ namespace DevOpsProject.CommunicationControl.API.DI
         {
             var redisConfiguration = configuration.GetSection("Redis").Get<RedisOptions>();
             var redisEnvironmentConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION") ?? redisConfiguration.ConnectionString;
-            // var redisEnvironmentConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? redisConfiguration.ConnectionString;
 
             System.Console.WriteLine($"Using Redis connection string from digital ocean: {redisEnvironmentConnectionString}");
-
-            // var options = new ConfigurationOptions
-            // {
-            //     EndPoints = { redisEnvironmentConnectionString ?? redisConfiguration.ConnectionString },
-            //     Ssl = true,
-            //     AbortOnConnectFail = false
-            // };
-            // var redis = ConnectionMultiplexer.Connect(options);
             var redis = ConnectionMultiplexer.Connect(redisEnvironmentConnectionString);
             
             serviceCollection.AddSingleton<IConnectionMultiplexer>(redis);

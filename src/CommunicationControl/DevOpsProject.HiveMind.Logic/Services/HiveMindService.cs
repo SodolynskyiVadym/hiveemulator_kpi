@@ -26,8 +26,10 @@ namespace DevOpsProject.HiveMind.Logic.Services
             _logger = logger;
 
             _communicationConfigurationOptions = communicationConfigurationOptions.Value;
-            _communicationConfigurationOptions.CommunicationControlIP = Environment.GetEnvironmentVariable("COMMUNICATION_IP");
-            _communicationConfigurationOptions.HiveIP = Environment.GetEnvironmentVariable("HIVE_IP");
+            _communicationConfigurationOptions.CommunicationControlIP = Environment.GetEnvironmentVariable("COMMUNICATION_IP") ?? _communicationConfigurationOptions.CommunicationControlIP;
+            _communicationConfigurationOptions.HiveIP = Environment.GetEnvironmentVariable("HIVE_IP") ?? _communicationConfigurationOptions.HiveIP;
+            _communicationConfigurationOptions.HivePort = int.TryParse(Environment.GetEnvironmentVariable("HIVE_PORT"), out var port) ? port : _communicationConfigurationOptions.HivePort;
+            _communicationConfigurationOptions.CommunicationControlPort = int.TryParse(Environment.GetEnvironmentVariable("COMMUNICATION_PORT"), out var controlPort) ? controlPort : _communicationConfigurationOptions.CommunicationControlPort;
 
         }
 
