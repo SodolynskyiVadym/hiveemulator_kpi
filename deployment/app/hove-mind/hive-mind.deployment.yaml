@@ -23,7 +23,7 @@ spec:
           - name: CommunicationConfiguration__CommunicationControlIP
             value: com-control/control
           - name: CommunicationConfiguration__HiveIP
-            value: 143.244.206.21/hive
+            value: com-control/hive
         resources:
           requests:
             memory: "128Mi"
